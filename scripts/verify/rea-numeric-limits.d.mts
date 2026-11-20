@@ -1,30 +1,11 @@
-/** Relative path of the registry. Its text is a declaration, not a producer. */
-export const NUMERIC_LIMIT_DECLARATION: "src/domain/numericLimitRegistry.ts";
-
-/** Limits that must become analysis settings and cannot be registry exceptions. */
-export const REQUIRED_RUNTIME_LIMITS: readonly [
-  "REA_NTFS_MFT_MAX_FILE_BYTES",
-  "REA_REGF_HIVE_MAX_FILE_BYTES",
-  "REA_WEB_BUNDLE_ENDPOINT_LITERAL_CANDIDATES",
-];
-
-/** True for a numeric `REA_` limit, including the documented endpoint-candidate count. */
-export function isNumericLimit(name: string): boolean;
-
 /** Statically declared environment seeds owned by ANALYSIS_SETTINGS. */
 export function parseRuntimeSettingEnvironments(source: string): Set<string>;
-
-/** Detect stale or newly introduced temporary per-call exceptions. */
-export function perCallLimitFailures(
-  listed: ReadonlyMap<string, string>,
-  temporary: ReadonlySet<string>,
-): string[];
 
 /** Parse static registry declarations, including external-reader provenance. */
 export function parseNumericLimitRegistry(source: string): Array<{
   name: string;
   update_mode: "restart";
-  policy: "restart-only" | "per-call";
+  policy: "restart-only";
   read: "startup" | "per-call" | "construction";
   reason: string;
   provenance?: {
@@ -55,12 +36,30 @@ export function discoverNumericLimitUses(
   readonly unresolved: readonly {
     readonly path: string;
     readonly offset: number;
+    readonly line: number;
+    readonly column: number;
     readonly reason: string;
   }[];
 };
 
-/** Why a tracked limit is not an analysis setting, when it is present. */
+/** A required runtime limit that is missing or is not an analysis setting. */
+export type RequiredRuntimeLimitFailure = {
+  readonly code:
+    | "required_runtime_limit_missing"
+    | "required_runtime_limit_not_analysis_setting";
+  readonly name: string;
+};
+
+/**
+ * Classify one required runtime limit.
+ * Absence from source, the exception registry, and ANALYSIS_SETTINGS is
+ * `required_runtime_limit_missing`.
+ */
 export function requiredRuntimeLimitFailure(
   name: string,
-  presence: { readonly inRuntime: boolean; readonly inRegistry: boolean },
-): string | undefined;
+  presence: {
+    readonly inSource: boolean;
+    readonly inRuntime: boolean;
+    readonly inRegistry: boolean;
+  },
+): RequiredRuntimeLimitFailure | undefined;
