@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
       - name: Detect upstream repo and default branch
         id: upstream
         env:
